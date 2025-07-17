@@ -6,12 +6,16 @@ import { ForeignKey } from "../decorators/foriegnKeys.decorator";
 export class Customer extends AuditInfo{
  @AutoIncrementPrimaryKey()
   customerId!: number;
- @ForeignKey("Store") 
+ 
+  @ForeignKey("Store") 
   storeId: number;
+
   firstName: string;
   lastName: string;
+  
   @ForeignKey("Address") 
   addressId: number;
+  
   active: boolean;
  constructor(
     storeId: number | null,

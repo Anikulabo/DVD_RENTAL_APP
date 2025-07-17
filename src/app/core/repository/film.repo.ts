@@ -1,9 +1,9 @@
 import { Injectable } from "@angular/core";
-import { City } from "../model/city.model";
 import { BaseRepository } from "./baseRepository";
+import { Film } from "../model/film.model";
 @Injectable({
   providedIn: 'root',
 })
-export class CityRepository extends BaseRepository<City> {
-  protected idKey = 'cityId';
+export class FilmRepository extends BaseRepository<Film> {
+  protected idKey = 'filmId';
 }

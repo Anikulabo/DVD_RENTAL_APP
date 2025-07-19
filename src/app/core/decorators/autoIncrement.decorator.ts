@@ -1,4 +1,3 @@
-// /src/app/core/decorators/auto-increment.decorator.ts
 export function AutoIncrementPrimaryKey(): PropertyDecorator {
   return function (target: any, propertyKey: string | symbol): void {
     const className = target.constructor.name;

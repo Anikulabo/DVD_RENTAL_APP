@@ -4,7 +4,6 @@ import { InvalidDataTypeException,MissingRequiredFieldException } from "../excep
 export class Address extends AuditInfo {
   @AutoIncrementPrimaryKey()
   addressId!: number;
-
   address: string;
   address2?: string;
   district: string;

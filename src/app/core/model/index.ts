@@ -9,7 +9,12 @@ import { Payment } from './payment.model';
 import { Rental } from './rental.model';
 import { Staff } from './staff.model';
 import { Store } from './store.model';
-import { CustomerSummaryDTO,CustomerAction,CustomerRegistrationDTO } from './types';
+import {
+  CustomerSummaryDTO,
+  CustomerAction,
+  CustomerRegistrationDTO,
+} from './types';
+import { UserRecord } from './usersRecord.model';
 export {
   Address,
   Category,
@@ -22,5 +27,10 @@ export {
   Rental,
   Staff,
   Store,
+  UserRecord
 };
-export type { CustomerSummaryDTO,CustomerAction,CustomerRegistrationDTO };
+export type {
+  CustomerSummaryDTO,
+  CustomerAction,
+  CustomerRegistrationDTO,
+};

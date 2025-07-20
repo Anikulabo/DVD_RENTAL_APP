@@ -6,4 +6,7 @@ export interface CustomerRegistrationDTO {
     countryName: string;
     firstName: string;
     lastName: string;
+    username: string;
+    password: string;
+    image: string
 }

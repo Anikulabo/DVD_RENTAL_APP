@@ -13,6 +13,7 @@ import {
   CustomerSummaryDTO,
   CustomerAction,
   CustomerRegistrationDTO,
+  CustomerDetailDTO
 } from './types';
 import { UserRecord } from './usersRecord.model';
 export {
@@ -33,4 +34,5 @@ export type {
   CustomerSummaryDTO,
   CustomerAction,
   CustomerRegistrationDTO,
+  CustomerDetailDTO
 };

@@ -1,12 +1,5 @@
-export interface CustomerRegistrationDTO {
+import { BaseUserDTO } from "./baseuserDTO.type";
+
+export interface CustomerRegistrationDTO extends AddressDTO,BaseUserDTO{
     customerId?: number;
-    addresses: string[];
-    district: string;
-    cityName: string;
-    countryName: string;
-    firstName: string;
-    lastName: string;
-    username: string;
-    password: string;
-    image: string
 }

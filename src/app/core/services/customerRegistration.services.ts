@@ -162,6 +162,7 @@ export class CustomersRegistrationServices extends AddressServiceBase {
         ? this.filmRepo.findById(inventory.filmId)?.title
         : 'Unknown';
       return {
+        rentalId: rental.rentalId,
         rentalDate: rental.rentalDate.toDateString(),
         returnDate: rental.returnDate?.toDateString(),
         filmTitle: filmTitle ?? 'Unknown',

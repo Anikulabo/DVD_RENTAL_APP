@@ -5,5 +5,8 @@ import { BaseRepository } from './baseRepository';
   providedIn: 'root',
 })
 export class CustomerRepository extends BaseRepository<Customer>{
-    protected idKey="customerId"
+    protected idKey="customerId";
+    getCustomerDetailByUserId(userId: number): number | null {
+        return this.getAll().find(customer => customer.userId === userId)?.customerId || null;
+    }
 }

@@ -1,3 +1,4 @@
+import { CustomerState } from "../pages/Customers/stores/customer.state";
 // src/app/core/store/app.state.ts
 export interface AppState {
   userId: number | null;

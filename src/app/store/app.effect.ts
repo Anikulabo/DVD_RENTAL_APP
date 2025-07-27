@@ -1,9 +1,10 @@
 import { Injectable, Inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { exhaustMap} from 'rxjs/operators';
+import { catchError, exhaustMap, map} from 'rxjs/operators';
 import { of } from 'rxjs';
 import { login, LoginFailure, setUser } from './app.action'; // Adjust the import path as necessary
 import { AuthService } from '../core/services/authentication.services'; // if available
+
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticateUserEffects {
@@ -15,21 +16,21 @@ export class AuthenticateUserEffects {
   loginUser$ = createEffect(() =>
     this.actions$.pipe(
       ofType(login),
-      exhaustMap(({ userName, password }) => {
-        try {
-          const user = this.authService.login(userName, password);
-          return of(
+      exhaustMap(({ userName, password }) =>
+        this.authService.login(userName, password).pipe(
+          map((user) =>
             setUser({
-              userId: user.username,
-              role: user.role,
-              detailId: user.detailId,
-              loading:false
+              userId: Number(user.username),
+              role: user.role as "customer" | "staff" | "admin",
+              detailId: Number(user.detailId),
+              loading: false
             })
-          );
-        } catch (error: any) {
-          return of(LoginFailure({ error: error.message }));
-        }
-      })
+          ),
+          catchError((error) =>
+            of(LoginFailure({ error: error.message }))
+          )
+        )
+      )
     )
   );
 }

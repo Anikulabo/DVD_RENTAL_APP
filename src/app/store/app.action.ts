@@ -9,5 +9,5 @@ export const  LoginFailure = createAction(
 export const logout = createAction('[app] Logout');
 export const setUser = createAction(
   '[app] Set User',
-  props<{ userId: number; role: 'customer' | 'staff' | 'admin'; detailId: number,loading:false }>()
+  props<{ userId: number; role: 'customer' | 'staff' ; detailId: number,loading:false }>()
 );

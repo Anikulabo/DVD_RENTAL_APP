@@ -17,5 +17,5 @@ export const resetCurrentCustomerDetail = createAction(
 // would trigger effect for saving or updating user
 export const saveCustomer = createAction(
   '[app-view-registration] Save Customer',
-  (payload: { data: Partial<CustomerRegistrationDTO>, isUpdate: boolean }) => payload
+  (payload: { data: CustomerRegistrationDTO }) => payload
 );

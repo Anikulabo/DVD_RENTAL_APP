@@ -17,9 +17,11 @@ import {
   CustomerRegistrationDTO,
   CustomerAction,
   CustomerDetailDTO,
+  Country,
 } from '../model';
 import { UserRepository } from '../repository/user.repo';
 import { AddressServiceBase } from './addressBase.services';
+import { catchError, Observable, of, switchMap, throwError } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class CustomersRegistrationServices extends AddressServiceBase {
   constructor(
@@ -36,7 +38,8 @@ export class CustomersRegistrationServices extends AddressServiceBase {
   ) {
     super(newCountryRepo, newCityRepo, newAddressRepo);
   }
-  // private method to get the store with least customers
+
+  // ✅ PRIVATE methods remain untouched
   private getStoreWithLeastCustomers(): number {
     const stores = this.storeRepo.getAll();
     const storeCustomerCounts = stores.map((store) => ({
@@ -82,6 +85,7 @@ export class CustomersRegistrationServices extends AddressServiceBase {
       }
     }
   }
+
   private fullyRemoveCustomer(customer: Customer): void {
     this.addressRepo.delete(customer.addressId);
     if (customer.userId !== null) {
@@ -95,59 +99,122 @@ export class CustomersRegistrationServices extends AddressServiceBase {
     this.customerRepo.update(customerId, { userId: null });
   }
 
+  // ✅ PUBLIC methods now return Observable<T>
   registerOrUpdateCustomer(
     dto: CustomerRegistrationDTO,
     action: CustomerAction,
     userId?: number
-  ): void {
-    let user: UserRecord;
+  ): Observable<void> {
     try {
-      user = new UserRecord(dto.username, dto.password, 'customer', dto.image);
+      const user = new UserRecord(
+        dto.username,
+        dto.password,
+        'customer',
+        dto.image
+      );
       this.userRepo.addUser(user);
+
+      return this.ensureCountry(dto.countryName).pipe(
+        switchMap((country: Country) =>
+          this.ensureCity(dto.cityName, country.countryId).pipe(
+            switchMap((city) =>
+              this.createAddress(dto, city.cityId).pipe(
+                switchMap((address) => {
+                  this.createOrUpdateCustomer(
+                    dto,
+                    action,
+                    address.addressId,
+                    user.userId,
+                    userId
+                  );
+                  return of(undefined);
+                })
+              )
+            )
+          )
+        ),
+        catchError((error) => {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Unknown error creating user';
+          return throwError(() => new Error(message));
+        })
+      );
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(error.message);
-      } else {
-        console.error('Unexpected error:', error);
-        throw new Error('Unknown error creating user');
-      }
+      const message =
+        error instanceof Error ? error.message : 'Unknown error creating user';
+      return throwError(() => new Error(message));
     }
-
-    const country = this.ensureCountry(dto.countryName);
-    const city = this.ensureCity(dto.cityName, country.countryId);
-    const address = this.createAddress(dto, city.cityId);
-
-    this.createOrUpdateCustomer(
-      dto,
-      action,
-      address.addressId,
-      user.userId,
-      userId
-    );
   }
-  // method to get all customer in a paginated format
+
+  getCustomerRegitrationDetailByCustomerId(
+    customerId: number
+  ): Observable<CustomerRegistrationDTO | null> {
+    const customer = this.customerRepo
+      .getAll()
+      .find((c) => c.customerId === customerId);
+    if (!customer) {
+      return throwError(
+        () => new Error(`Customer with ID ${customerId} not found.`)
+      );
+    }
+    const address = this.addressRepo.findById(customer.addressId);
+    const dto: CustomerRegistrationDTO = {
+      customerId: customer.customerId,
+      firstName: customer.firstName,
+      lastName: customer.lastName,
+      addresses: address
+        ? address.address2
+          ? [address.address, address.address2]
+          : [address.address]
+        : [],
+      cityName: address
+        ? this.cityRepo.findById(address.cityId)?.city ?? ''
+        : '',
+      countryName: address
+        ? (() => {
+            const city = this.cityRepo.findById(address.cityId);
+            if (city) {
+              const country = this.countryRepo.findById(city.countryId);
+              return country ? country.country : '';
+            }
+            return '';
+          })()
+        : '',
+      username: '', // fill if available
+      password: '', // fill if available
+      image: '', // fill if available
+      district: address ? address.district : '', // fill if available
+      // fill if available
+    };
+    return of(dto);
+  }
   getAllCustomersPaginated(
     storeId: number,
     page: number = 1,
     pageSize: number = 10
-  ): CustomerSummaryDTO[] {
+  ): Observable<CustomerSummaryDTO[]> {
     const storeCustomers = this.customerRepo
       .getAll()
       .filter((c) => c.storeId === storeId);
     const startIndex = (page - 1) * pageSize;
     const paginated = storeCustomers.slice(startIndex, startIndex + pageSize);
 
-    return paginated.map((customer) => ({
+    const result = paginated.map((customer) => ({
       firstName: customer.firstName,
       lastName: customer.lastName,
       createdAt: customer.createdAt,
     }));
+    return of(result);
   }
-  // method to get the detail of a single customer
-  getCustomerDetailById(customerId: number): CustomerDetailDTO {
+
+  getCustomerDetailById(customerId: number): Observable<CustomerDetailDTO> {
     const customer = this.customerRepo.findById(customerId);
     if (!customer) {
-      throw new Error(`Customer with ID ${customerId} not found.`);
+      return throwError(
+        () => new Error(`Customer with ID ${customerId} not found.`)
+      );
     }
 
     const address = this.addressRepo.findById(customer.addressId);
@@ -174,7 +241,7 @@ export class CustomersRegistrationServices extends AddressServiceBase {
       .filter((p) => p.customerId === customerId);
     const totalAmountSpent = payments.reduce((sum, p) => sum + p.amount, 0);
 
-    return {
+    const detail: CustomerDetailDTO = {
       fullName: `${customer.firstName} ${customer.lastName}`,
       address: address
         ? `${address.address}, ${address.district}`
@@ -184,11 +251,15 @@ export class CustomersRegistrationServices extends AddressServiceBase {
       createdAt: customer.createdAt,
       active: customer.active,
     };
+
+    return of(detail);
   }
-  // method to remove customer
-  deleteCustomer(id: number): void {
+
+  deleteCustomer(id: number): Observable<void> {
     const customer = this.customerRepo.findById(id);
-    if (!customer) throw new Error(`Customer with ID ${id} not found.`);
+    if (!customer) {
+      return throwError(() => new Error(`Customer with ID ${id} not found.`));
+    }
 
     const rentals = this.rentalRepo
       .getAll()
@@ -204,5 +275,7 @@ export class CustomersRegistrationServices extends AddressServiceBase {
         this.blockCustomerLogin(customer.customerId, customer.userId);
       }
     }
+
+    return of(undefined);
   }
 }
